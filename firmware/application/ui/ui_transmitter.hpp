@@ -96,7 +96,7 @@ class TransmitterView : public View {
     NumberField field_bw{
         {15 * 8, 1 * 8},
         3,
-        {1, 150},
+        {1, 250},
         1,
         ' '};
 
