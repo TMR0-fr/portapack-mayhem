@@ -48,7 +48,7 @@
 #include "ui_fsk_rx.hpp"
 #include "ui_iq_trim.hpp"
 // #include "ui_jammer.hpp" //moved to ext
-//  #include "ui_keyfob.hpp"
+//  #include "ui_keyfob.hpp" //moved to ext
 //  #include "ui_lcr.hpp"
 #include "ui_level.hpp"
 #include "ui_looking_glass_app.hpp"
@@ -178,7 +178,6 @@ const NavigationView::AppList NavigationView::appList = {
     {"aprstx", "APRS TX", TX, ui::Color::green(), &bitmap_icon_aprs, new ViewFactory<APRSTXView>()},
     {"bht", "BHT Xy/EP", TX, ui::Color::green(), &bitmap_icon_bht, new ViewFactory<BHTView>()},
     {"bletx", "BLE Tx", TX, ui::Color::green(), &bitmap_icon_btle, new ViewFactory<BLETxView>()},
-    //{"keyfob", "Key fob", TX, ui::Color::orange(), &bitmap_icon_keyfob, new ViewFactory<KeyfobView>()},
     {"morse", "Morse", TX, ui::Color::green(), &bitmap_icon_morse, new ViewFactory<MorseView>()},
     //{"nuoptixdtmf", "Nuoptix DTMF", TX, ui::Color::green(), &bitmap_icon_nuoptix, new ViewFactory<NuoptixView>()},
     {"ooktx", "OOK", TX, ui::Color::yellow(), &bitmap_icon_remote, new ViewFactory<EncodersView>()},
@@ -681,6 +680,26 @@ static void add_apps(NavigationView& nav, BtnGridView& grid, app_location_t loc)
     };
 }
 
+void addExternalItems(NavigationView& nav, app_location_t location, BtnGridView& grid) {
+    auto externalItems = ExternalItemsMenuLoader::load_external_items(location, nav);
+    if (externalItems.empty()) {
+        grid.add_item({"Notice",
+                       Color::red(),
+                       &bitmap_icon_debug,
+                       [&nav]() {
+                           nav.display_modal(
+                               "Notice",
+                               "External app directory empty;\n"
+                               "see Mayhem wiki and copy apps\n"
+                               "to APPS folder of SD card.");
+                       }});
+    } else {
+        for (auto const& gridItem : externalItems) {
+            grid.add_item(gridItem);
+        }
+    }
+}
+
 /* ReceiversMenuView *****************************************************/
 
 ReceiversMenuView::ReceiversMenuView(NavigationView& nav) {
@@ -690,9 +709,7 @@ ReceiversMenuView::ReceiversMenuView(NavigationView& nav) {
 
     add_apps(nav, *this, RX);
 
-    for (auto const& gridItem : ExternalItemsMenuLoader::load_external_items(app_location_t::RX, nav)) {
-        add_item(gridItem);
-    };
+    addExternalItems(nav, app_location_t::RX, *this);
 }
 
 /* TransmittersMenuView **************************************************/
@@ -704,9 +721,7 @@ TransmittersMenuView::TransmittersMenuView(NavigationView& nav) {
 
     add_apps(nav, *this, TX);
 
-    for (auto const& gridItem : ExternalItemsMenuLoader::load_external_items(app_location_t::TX, nav)) {
-        add_item(gridItem);
-    };
+    addExternalItems(nav, app_location_t::TX, *this);
 }
 
 /* UtilitiesMenuView *****************************************************/
@@ -718,9 +733,7 @@ UtilitiesMenuView::UtilitiesMenuView(NavigationView& nav) {
 
     add_apps(nav, *this, UTILITIES);
 
-    for (auto const& gridItem : ExternalItemsMenuLoader::load_external_items(app_location_t::UTILITIES, nav)) {
-        add_item(gridItem);
-    };
+    addExternalItems(nav, app_location_t::UTILITIES, *this);
 
     set_max_rows(2);  // allow wider buttons
 }
