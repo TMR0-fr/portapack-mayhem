@@ -94,6 +94,7 @@ class NavigationView : public View {
     NavigationView& operator=(NavigationView&&) = delete;
 
     bool is_top() const;
+    bool is_valid() const;
 
     template <class T, class... Args>
     T* push(Args&&... args) {
@@ -286,6 +287,7 @@ class InformationView : public View {
    public:
     InformationView(NavigationView& nav);
     void refresh();
+    bool firmware_checksum_error();
 
    private:
     // static constexpr auto version_string = "v1.4.4"; // This is commented out as we are now setting the version via ENV (VERSION_STRING=v1.0.0)
