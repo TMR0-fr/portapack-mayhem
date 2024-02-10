@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2015 Jared Boone, ShareBrained Technology, Inc.
- * copyleft (ɔ) 2023 zxkmm under GPL license
- * Copyright (C) 2023 u-foka
+ * Copyright (C) 2024 Mark Thompson
  *
  * This file is part of PortaPack.
  *
@@ -21,20 +19,11 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef __TOUCH_ADC_H__
-#define __TOUCH_ADC_H__
+// dummy include file to avoid changing original source
 
-#include "touch.hpp"
+#ifndef __UI_Arial12x12_H__
+#define __UI_Arial12x12_H__
 
-namespace touch {
-namespace adc {
+#define Arial12x12 (0)
 
-void init();
-void start();
-
-Samples get();
-
-} /* namespace adc */
-} /* namespace touch */
-
-#endif /*__TOUCH_ADC_H__*/
+#endif /*__UI_Arial12x12_H__*/

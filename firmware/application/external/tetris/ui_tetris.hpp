@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2023 Kyle Reed
- * Copyright (C) 2023 Mark Thompson
+ * Copyright (C) 2024 Mark Thompson
  *
  * This file is part of PortaPack.
  *
@@ -20,44 +19,47 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef __UI_SS_VIEWER_H__
-#define __UI_SS_VIEWER_H__
+#ifndef __UI_TETRIS_H__
+#define __UI_TETRIS_H__
 
-#include "ui.hpp"
 #include "ui_navigation.hpp"
-#include "ui_painter.hpp"
+#include "event_m0.hpp"
+#include "message.hpp"
+#include "irq_controls.hpp"
 #include "ui_styles.hpp"
-#include "ui_widget.hpp"
-#include "file.hpp"
+#include "random.hpp"
+#include "lpc43xx_cpp.hpp"
+#include "limits.h"
 
-namespace ui {
+namespace ui::external_app::tetris {
 
-extern const std::filesystem::path splash_dot_bmp;
-
-class ScreenshotViewer : public View {
+class TetrisView : public View {
    public:
-    ScreenshotViewer(NavigationView& nav, const std::filesystem::path& path);
-    bool on_key(KeyEvent key) override;
+    TetrisView(NavigationView& nav);
+
+    std::string title() const override { return "Tetris"; };
+
+    void focus() override { dummy.focus(); };
     void paint(Painter& painter) override;
+    void frame_sync();
+    bool on_encoder(const EncoderEvent event) override;
+    bool on_key(KeyEvent key) override;
 
    private:
+    bool initialized = false;
     NavigationView& nav_;
-    std::filesystem::path path_{};
+
+    Button dummy{
+        {240, 0, 0, 0},
+        ""};
+
+    MessageHandlerRegistration message_handler_frame_sync{
+        Message::ID::DisplayFrameSync,
+        [this](const Message* const) {
+            this->frame_sync();
+        }};
 };
 
-class SplashViewer : public View {
-   public:
-    SplashViewer(NavigationView& nav, const std::filesystem::path& path);
-    bool on_key(KeyEvent key) override;
-    void paint(Painter& painter) override;
-    void update_ss(void);
+}  // namespace ui::external_app::tetris
 
-   private:
-    NavigationView& nav_;
-    std::filesystem::path path_{};
-    bool valid_image{};
-};
-
-}  // namespace ui
-
-#endif  // __UI_SS_VIEWER_H__
+#endif /*__UI_TETRIS_H__*/

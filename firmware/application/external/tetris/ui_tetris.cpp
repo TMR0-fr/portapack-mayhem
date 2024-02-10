@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2014 Jared Boone, ShareBrained Technology, Inc.
  * Copyright (C) 2024 Mark Thompson
  *
  * This file is part of PortaPack.
@@ -20,18 +19,42 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef __ENCODER_H__
-#define __ENCODER_H__
+#include "ui_tetris.hpp"
 
-#include <cstdint>
+namespace ui::external_app::tetris {
 
-class Encoder {
-   public:
-    int_fast8_t update(const uint_fast8_t phase_bits);
+#pragma GCC diagnostic push
+// external code, so ignore warnings
+#pragma GCC diagnostic ignored "-Weffc++"
+#include "tetris.cpp"
+#pragma GCC diagnostic pop
 
-   private:
-    uint_fast8_t state{0};
-    int_fast8_t prev_direction{0};
-};
+TetrisView::TetrisView(NavigationView& nav)
+    : nav_(nav) {
+    add_children({&dummy});
+}
 
-#endif /*__ENCODER_H__*/
+void TetrisView::paint(Painter& painter) {
+    (void)painter;
+
+    if (!initialized) {
+        initialized = true;
+        std::srand(LPC_RTC->CTIME0);
+        main();
+    }
+}
+
+void TetrisView::frame_sync() {
+    check_fall_timer();
+    set_dirty();
+}
+
+bool TetrisView::on_encoder(const EncoderEvent delta) {
+    return check_encoder(delta);
+}
+
+bool TetrisView::on_key(const KeyEvent key) {
+    return check_key(key);
+}
+
+}  // namespace ui::external_app::tetris
