@@ -229,7 +229,9 @@ struct data_t {
     uint16_t fake_brightness_level : 4;
 
     // Encoder rotation rate multiplier for larger increments when rotated rapidly
-    uint16_t encoder_rate_multiplier : 8;
+    uint16_t encoder_rate_multiplier : 4;
+
+    uint16_t UNUSED : 4;
 
     // Headphone volume in centibels.
     int16_t headphone_volume_cb;
@@ -296,6 +298,8 @@ struct data_t {
           encoder_dial_sensitivity(DIAL_SENSITIVITY_NORMAL),
           fake_brightness_level(BRIGHTNESS_50),
           encoder_rate_multiplier(1),
+          UNUSED(0),
+
           headphone_volume_cb(-600),
           misc_config(),
           ui_config2(),
@@ -430,13 +434,15 @@ void defaults() {
 }
 
 void init() {
-    const auto switches_state = get_switches_state();
+    const auto switches_state = swizzled_switches();
 
     // ignore for valid check
     auto config_mode_backup = config_mode_storage_direct();
     set_config_mode_storage_direct(CONFIG_MODE_NORMAL_VALUE);
 
-    if (!(switches_state[(size_t)ui::KeyEvent::Left] && switches_state[(size_t)ui::KeyEvent::Right]) && backup_ram->is_valid()) {
+    if (!(((switches_state >> (size_t)ui::KeyEvent::Left & 1) == 1) &&
+          ((switches_state >> (size_t)ui::KeyEvent::Right & 1) == 1)) &&
+        backup_ram->is_valid()) {
         // Copy valid persistent data into cache.
         cached_backup_ram = *backup_ram;
 
@@ -455,7 +461,6 @@ void init() {
 
     // Firmware upgrade handling - adjust newly defined fields where 0 is an invalid default
     if (fake_brightness_level() == 0) set_fake_brightness_level(BRIGHTNESS_50);
-    if (encoder_rate_multiplier() == 0) set_encoder_rate_multiplier(1);
 }
 
 void persist() {
@@ -987,7 +992,9 @@ void set_encoder_dial_sensitivity(uint8_t v) {
     data->encoder_dial_sensitivity = v;
 }
 uint8_t encoder_rate_multiplier() {
-    return data->encoder_rate_multiplier;
+    uint8_t v = data->encoder_rate_multiplier;
+    if (v == 0) v = 1;  // minimum value is 1; treat 0 the same as 1
+    return v;
 }
 void set_encoder_rate_multiplier(uint8_t v) {
     data->encoder_rate_multiplier = v;
