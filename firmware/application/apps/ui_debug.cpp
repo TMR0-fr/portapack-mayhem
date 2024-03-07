@@ -323,6 +323,11 @@ bool ControlsSwitchesWidget::on_key(const KeyEvent key) {
     return true;
 }
 
+bool ControlsSwitchesWidget::on_encoder(const EncoderEvent delta) {
+    last_delta = delta;
+    return true;
+}
+
 void ControlsSwitchesWidget::paint(Painter& painter) {
     const auto pos = screen_pos();
 
@@ -405,6 +410,8 @@ void ControlsSwitchesWidget::paint(Painter& painter) {
 
         switches_event >>= 1;
     }
+
+    painter.draw_string({5 * 8, 12 * 16}, Styles::light_grey, to_string_dec_int(last_delta, 3));
 }
 
 void ControlsSwitchesWidget::on_frame_sync() {
@@ -450,6 +457,17 @@ DebugPeripheralsMenuView::DebugPeripheralsMenuView(NavigationView& nav) {
     set_max_rows(2);  // allow wider buttons
 }
 
+/* DebugReboot **********************************************/
+
+DebugReboot::DebugReboot(NavigationView& nav) {
+    (void)nav;
+
+    LPC_RGU->RESET_CTRL[0] = (1 << 0);
+
+    while (1)
+        __WFE();
+}
+
 /* DebugMenuView *********************************************************/
 
 DebugMenuView::DebugMenuView(NavigationView& nav) {
@@ -465,6 +483,7 @@ DebugMenuView::DebugMenuView(NavigationView& nav) {
         {"Peripherals", ui::Color::dark_cyan(), &bitmap_icon_peripherals, [&nav]() { nav.push<DebugPeripheralsMenuView>(); }},
         {"Pers. Memory", ui::Color::dark_cyan(), &bitmap_icon_memory, [&nav]() { nav.push<DebugPmemView>(); }},
         //{ "Radio State",	ui::Color::white(),	nullptr,	[&nav](){ nav.push<NotImplementedView>(); } },
+        {"Reboot", ui::Color::dark_cyan(), &bitmap_icon_setup, [&nav]() { nav.push<DebugReboot>(); }},
         {"SD Card", ui::Color::dark_cyan(), &bitmap_icon_sdcard, [&nav]() { nav.push<SDCardDebugView>(); }},
         {"Temperature", ui::Color::dark_cyan(), &bitmap_icon_temperature, [&nav]() { nav.push<TemperatureView>(); }},
         {"Touch Test", ui::Color::dark_cyan(), &bitmap_icon_notepad, [&nav]() { nav.push<DebugScreenTest>(); }},

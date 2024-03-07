@@ -1,5 +1,10 @@
-> [!IMPORTANT]  
-> this repository **has just been moved** from my personal GitHub [eried/portapack-mayhem](https://github.com/eried/portapack-mayhem) to an organization: [portapack-mayhem](https://github.com/portapack-mayhem/mayhem-firmware). Please keep this in mind to **update your links** accordingly.
+> [!WARNING]
+> Recently, we have become aware of certain individuals distributing prepackaged packages of Mayhem for a fee, and we want to bring this to your attention to ensure the integrity and security of our project.
+> 
+> We would like to clarify that none of the contributors to Mayhem receive any monetary compensation for their efforts. All the work put into this project is driven by passion and hobby, and we are committed to providing the community with an open-source solution that remains free of charge.
+> 
+> __IF YOU'VE PAID FOR MAYHEM OR ANY PREPACKAGED PACKAGES, YOU'RE BEING SCAMMED.__ Seek a refund from your card company and report the issue immediately.
+> The only legitimate link leading to our repositories is the organization [portapack-mayhem](https://github.com/portapack-mayhem/mayhem-firmware). Please ensure that any download or access to our software is done exclusively through these trusted sources.
 
 # PortaPack Mayhem
 
@@ -13,11 +18,11 @@ This is a fork of the [Havoc](https://github.com/furrtek/portapack-havoc/) firmw
 
 # What is this?
 
-If you are new to *HackRF+PortaPack+Mayhem*, check this video:
+If you are new to *HackRF+PortaPack+Mayhem*, check these:
 
-[![Beginner's Guide To The HackRF & Portapak With Mayhem](https://img.youtube.com/vi/H-bqdWfbhpg/0.jpg)](https://www.youtube.com/watch?v=H-bqdWfbhpg)
+[<img alt="HackRF 101 : Everything You Need to Know to Get Started!" src="https://img.youtube.com/vi/xGR_PMD9LeU/maxresdefault.jpg" width="512">](https://grabify.link/C0J6ZR)
 
-For people familiar with the [Flipper Zero](https://github.com/flipperdevices/flipperzero-firmware), this one might be interesting:<br>[What is the HackRF One Portapack H2+?](https://www.youtube.com/watch?v=alrFbY5vxt4)
+[<img alt="Beginner's Guide To The HackRF & Portapak With Mayhem" src="https://img.youtube.com/vi/H-bqdWfbhpg/maxresdefault.jpg" width="254">](https://grabify.link/5MU2VH) [<img alt="What is the HackRF One Portapack H2+?" src="https://img.youtube.com/vi/alrFbY5vxt4/maxresdefault.jpg" width="254">](https://grabify.link/9UZGEW)
 
 # Frequently Asked Questions
 

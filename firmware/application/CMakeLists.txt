@@ -44,7 +44,7 @@ if(cpp20_supported)
 else()
 	set(USE_CPPOPT "-std=c++17")
 endif()
-set(USE_CPPOPT "${USE_CPPOPT} -flto -fno-rtti -fno-exceptions -Weffc++ -Wuninitialized -Wno-volatile")
+set(USE_CPPOPT "${USE_CPPOPT} -fno-rtti -fno-exceptions -Weffc++ -Wuninitialized -Wno-volatile")
 
 # Enable this if you want the linker to remove unused code and data
 set(USE_LINK_GC yes)
@@ -52,7 +52,7 @@ set(USE_LINK_GC yes)
 # Linker extra options here.
 set(USE_LDOPT)
 
-# Enable this if you want link time optimizations (LTO)
+# Enable this if you want link time optimizations (LTO) - this flag affects chibios only
 set(USE_LTO no)
 
 # If enabled, this option allows to compile the application in THUMB mode.
@@ -293,7 +293,7 @@ set(CPPSRC
 	# apps/ui_jammer.cpp
     # apps/ui_keyfob.cpp
 	# apps/ui_lcr.cpp
-	apps/ui_level.cpp  
+	apps/ui_level.cpp
 	apps/ui_looking_glass_app.cpp
 	apps/ui_mictx.cpp
 	apps/ui_modemsetup.cpp
@@ -304,7 +304,7 @@ set(CPPSRC
 	apps/ui_pocsag_tx.cpp
 	apps/ui_rds.cpp
 	apps/ui_recon_settings.cpp
-	apps/ui_recon.cpp  
+	apps/ui_recon.cpp
 	apps/ui_remote.cpp
 	apps/ui_scanner.cpp
 	apps/ui_sd_over_usb.cpp
@@ -347,9 +347,11 @@ set(CPPSRC
 	${HACKRF_CPLD_DATA_CPP}
 	ui_external_items_menu_loader.cpp
 	view_factory_base.cpp
-
-	${EXTCPPSRC}
 )
+
+set_source_files_properties(${CPPSRC} PROPERTIES COMPILE_FLAGS -flto) # Add lto flag to the non-external sources only
+
+list (APPEND CPPSRC ${EXTCPPSRC}) # Append external sources after setting lto flag to internal ones
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
