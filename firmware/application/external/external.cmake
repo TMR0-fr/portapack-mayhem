@@ -1,12 +1,12 @@
 set(EXTCPPSRC
 
 	#pacman
-#	external/pacman/main.cpp
-#	external/pacman/ui_pacman.cpp
+	external/pacman/main.cpp
+	external/pacman/ui_pacman.cpp
 
 	#tetris
-#	external/tetris/main.cpp
-#	external/tetris/ui_tetris.cpp
+	external/tetris/main.cpp
+	external/tetris/ui_tetris.cpp
 
 	#afsk_rx
 	external/afsk_rx/main.cpp
@@ -62,10 +62,15 @@ set(EXTCPPSRC
 	external/keyfob/main.cpp
 	external/keyfob/ui_keyfob.cpp
 	external/keyfob/ui_keyfob.hpp
+
+	#extsensors
+	external/extsensors/main.cpp
+	external/extsensors/ui_extsensors.cpp
+	external/extsensors/ui_extsensors.hpp
 )
 
 set(EXTAPPLIST
-#	pacman
+	pacman
 	afsk_rx
 	calculator
 	font_viewer
@@ -79,5 +84,6 @@ set(EXTAPPLIST
 	gpssim
 	spainter
 	keyfob
-#	tetris
+	tetris
+	extsensors
 )

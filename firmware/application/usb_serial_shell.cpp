@@ -211,6 +211,7 @@ static void cmd_screenframe(BaseSequentialStream* chp, int argc, char* argv[]) {
     chprintf(chp, "ok\r\n");
 }
 
+// calculates the 1 byte rgb value, and add 32 to it, so it can be a printable character.
 static char getChrFromRgb(uint8_t r, uint8_t g, uint8_t b) {
     uint8_t chR = r >> 6;  // 3bit
     uint8_t chG = g >> 6;  // 3bit
@@ -220,26 +221,36 @@ static char getChrFromRgb(uint8_t r, uint8_t g, uint8_t b) {
     return res;
 }
 
+// keep track of a buffer, and sends only if full. not only line by line
+static void screenbuffer_helper_add(BaseSequentialStream* chp, char* buffer, size_t& wp, char ch) {
+    buffer[wp++] = ch;
+    if (wp > USBSERIAL_BUFFERS_SIZE - 1) {
+        fillOBuffer(&((SerialUSBDriver*)chp)->oqueue, (const uint8_t*)buffer, USBSERIAL_BUFFERS_SIZE);
+        wp = 0;
+    }
+}
+
 // sends only 1 byte (printable only) per pixel, so around 96 colors
 static void cmd_screenframeshort(BaseSequentialStream* chp, int argc, char* argv[]) {
     (void)argc;
     (void)argv;
-
     auto evtd = getEventDispatcherInstance();
     evtd->enter_shell_working_mode();
-
+    char buffer[USBSERIAL_BUFFERS_SIZE];
+    size_t wp = 0;
     for (int y = 0; y < ui::screen_height; y++) {
         std::array<ui::ColorRGB888, ui::screen_width> row;
         portapack::display.read_pixels({0, y, ui::screen_width, 1}, row);
-        char buffer[242];
         for (int i = 0; i < 240; ++i) {
-            buffer[i] = getChrFromRgb(row[i].r, row[i].g, row[i].b);
+            screenbuffer_helper_add(chp, buffer, wp, getChrFromRgb(row[i].r, row[i].g, row[i].b));
         }
-        buffer[240] = '\r';
-        buffer[241] = '\n';
-        fillOBuffer(&((SerialUSBDriver*)chp)->oqueue, (const uint8_t*)buffer, 242);
+        screenbuffer_helper_add(chp, buffer, wp, '\r');
+        screenbuffer_helper_add(chp, buffer, wp, '\n');
     }
-
+    if (wp > 0) {
+        // send remaining
+        fillOBuffer(&((SerialUSBDriver*)chp)->oqueue, (const uint8_t*)buffer, wp);
+    }
     evtd->exit_shell_working_mode();
     chprintf(chp, "\r\nok\r\n");
 }
@@ -911,13 +922,33 @@ static void cmd_gotgps(BaseSequentialStream* chp, int argc, char* argv[]) {
 }
 
 static void cmd_gotorientation(BaseSequentialStream* chp, int argc, char* argv[]) {
-    const char* usage = "usage: gotorientation <angle>\r\n";
-    if (argc != 1) {
+    const char* usage = "usage: gotorientation <angle> [tilt]\r\n";
+    if (argc != 1 && argc != 2) {
         chprintf(chp, usage);
         return;
     }
     uint16_t angle = strtol(argv[0], NULL, 10);
-    OrientationDataMessage msg{angle};
+    int16_t tilt = 400;
+    if (argc >= 2) tilt = strtol(argv[1], NULL, 10);
+    OrientationDataMessage msg{angle, tilt};
+    EventDispatcher::send_message(msg);
+    chprintf(chp, "ok\r\n");
+}
+
+static void cmd_gotenv(BaseSequentialStream* chp, int argc, char* argv[]) {
+    const char* usage = "usage: gotenv <temperature> [humidity] [pressure]  [light]\r\n";
+    if (argc < 1 || argc > 4) {
+        chprintf(chp, usage);
+        return;
+    }
+    float temp = atof(argv[0]);
+    float humi = 0;
+    float pressure = 0;
+    uint16_t light = 0;
+    if (argc > 1) humi = atof(argv[1]);
+    if (argc > 2) pressure = atof(argv[2]);
+    if (argc > 3) light = strtol(argv[3], NULL, 10);
+    EnvironmentDataMessage msg{temp, humi, pressure, light};
     EventDispatcher::send_message(msg);
     chprintf(chp, "ok\r\n");
 }
@@ -1044,6 +1075,7 @@ static const ShellCommand commands[] = {
     {"appstart", cmd_appstart},
     {"gotgps", cmd_gotgps},
     {"gotorientation", cmd_gotorientation},
+    {"gotenv", cmd_gotenv},
     {"sysinfo", cmd_sysinfo},
     {"radioinfo", cmd_radioinfo},
     {"pmemreset", cmd_pmemreset},
