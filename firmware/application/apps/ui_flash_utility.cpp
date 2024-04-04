@@ -23,10 +23,9 @@
 #include "ui_flash_utility.hpp"
 #include "ui_styles.hpp"
 #include "portapack_shared_memory.hpp"
+#include "file_path.hpp"
 
 namespace ui {
-
-static const char16_t* firmware_folder = u"/FIRMWARE";
 
 // Firmware image validation
 static const char* hackrf_magic = "HACKRFFW";
@@ -84,30 +83,29 @@ FlashUtilityView::FlashUtilityView(NavigationView& nav)
 
     menu_view.set_parent_rect({0, 3 * 8, 240, 33 * 8});
 
-    ensure_directory(firmware_folder);
+    ensure_directory(firmware_dir);
 
-    for (const auto& entry : std::filesystem::directory_iterator(firmware_folder, u"*.bin")) {
-        auto filename = entry.path().filename();
-        auto path = entry.path().native();
+    auto add_firmware_items = [&](
+                                  const std::filesystem::path& folder_path,
+                                  const std::filesystem::path& wild,
+                                  ui::Color color) {
+        for (const auto& entry : std::filesystem::directory_iterator(folder_path, wild)) {
+            auto filename = entry.path().filename();
+            auto path = entry.path().native();
 
-        menu_view.add_item({filename.string().substr(0, max_filename_length),
-                            ui::Color::red(),
-                            &bitmap_icon_temperature,
-                            [this, path](KeyEvent) {
-                                this->firmware_selected(path);
-                            }});
-    }
-    for (const auto& entry : std::filesystem::directory_iterator(firmware_folder, u"*.tar")) {
-        auto filename = entry.path().filename();
-        auto path = entry.path().native();
+            menu_view.add_item({filename.string().substr(0, max_filename_length),
+                                color,
+                                &bitmap_icon_temperature,
+                                [this, path](KeyEvent) {
+                                    this->firmware_selected(path);
+                                }});
+        }
+    };
 
-        menu_view.add_item({filename.string().substr(0, max_filename_length),
-                            ui::Color::purple(),
-                            &bitmap_icon_temperature,
-                            [this, path](KeyEvent) {
-                                this->firmware_selected(path);
-                            }});
-    }
+    add_firmware_items(firmware_dir, u"*.bin", ui::Color::red());
+    add_firmware_items(firmware_dir, u"*.tar", ui::Color::purple());
+
+    // add_firmware_items(user_firmware_folder,u"*.bin", ui::Color::purple());
 }
 
 void FlashUtilityView::firmware_selected(std::filesystem::path::string_type path) {
@@ -117,7 +115,7 @@ void FlashUtilityView::firmware_selected(std::filesystem::path::string_type path
         YESNO,
         [this, path](bool choice) {
             if (choice) {
-                std::u16string full_path = std::u16string(u"FIRMWARE/") + path;
+                std::filesystem::path::string_type full_path = firmware_dir.native() + u"/" + path;
                 this->flash_firmware(full_path);
             }
         });

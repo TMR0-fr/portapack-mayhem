@@ -136,6 +136,8 @@ class NavigationView : public View {
     static const AppList appList;
 
     bool StartAppByName(const char* name);  // Starts a View  (app) by name stored in appListFC. This is to start apps from console
+    void handle_autostart();
+
    private:
     struct ViewState {
         std::unique_ptr<View> view;
@@ -329,18 +331,30 @@ class ReceiversMenuView : public BtnGridView {
    public:
     ReceiversMenuView(NavigationView& nav);
     std::string title() const override { return "Receive"; };
+
+   private:
+    NavigationView& nav_;
+    void on_populate() override;
 };
 
 class TransmittersMenuView : public BtnGridView {
    public:
     TransmittersMenuView(NavigationView& nav);
     std::string title() const override { return "Transmit"; };
+
+   private:
+    NavigationView& nav_;
+    void on_populate() override;
 };
 
 class UtilitiesMenuView : public BtnGridView {
    public:
     UtilitiesMenuView(NavigationView& nav);
     std::string title() const override { return "Utilities"; };
+
+   private:
+    NavigationView& nav_;
+    void on_populate() override;
 };
 
 class SystemMenuView : public BtnGridView {
@@ -348,6 +362,8 @@ class SystemMenuView : public BtnGridView {
     SystemMenuView(NavigationView& nav);
 
    private:
+    NavigationView& nav_;
+    void on_populate() override;
     void hackrf_mode(NavigationView& nav);
 };
 
