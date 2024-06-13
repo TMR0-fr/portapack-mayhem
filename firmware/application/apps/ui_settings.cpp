@@ -46,10 +46,11 @@ using namespace portapack;
 namespace fs = std::filesystem;
 
 #include "string_format.hpp"
-#include "ui_styles.hpp"
 #include "ui_font_fixed_8x16.hpp"
 #include "cpld_update.hpp"
 #include "config_mode.hpp"
+
+extern ui::SystemView* system_view_ptr;
 
 namespace pmem = portapack::persistent_memory;
 
@@ -228,9 +229,9 @@ SetRadioView::SetRadioView(
     value_source_frequency.set(clock_manager.get_freq());
 
     // Make these Text controls look like Labels.
-    label_source.set_style(&Styles::light_grey);
-    value_source.set_style(&Styles::light_grey);
-    value_source_frequency.set_style(&Styles::light_grey);
+    label_source.set_style(Theme::getInstance()->fg_light);
+    value_source.set_style(Theme::getInstance()->fg_light);
+    value_source_frequency.set_style(Theme::getInstance()->fg_light);
 
     SetFrequencyCorrectionModel model{
         static_cast<int8_t>(pmem::correction_ppb() / 1000), 0};
@@ -329,6 +330,10 @@ SetUIView::SetUIView(NavigationView& nav) {
     if (audio::speaker_disable_supported()) {
         add_child(&toggle_speaker);
     }
+    if (battery::BatteryManagement::isDetected()) {
+        add_child(&toggle_battery_icon);
+        add_child(&toggle_battery_text);
+    }
 
     checkbox_disable_touchscreen.set_value(pmem::disable_touchscreen());
     checkbox_showsplash.set_value(pmem::config_splash());
@@ -355,6 +360,8 @@ SetUIView::SetUIView(NavigationView& nav) {
     toggle_speaker.set_value(!pmem::ui_hide_speaker());
     toggle_mute.set_value(!pmem::ui_hide_mute());
     toggle_fake_brightness.set_value(!pmem::ui_hide_fake_brightness());
+    toggle_battery_icon.set_value(!pmem::ui_hide_battery_icon());
+    toggle_battery_text.set_value(!pmem::ui_hide_numeric_battery());
     toggle_sd_card.set_value(!pmem::ui_hide_sd_card());
 
     button_save.on_select = [&nav, this](Button&) {
@@ -382,6 +389,8 @@ SetUIView::SetUIView(NavigationView& nav) {
         pmem::set_ui_hide_speaker(!toggle_speaker.value());
         pmem::set_ui_hide_mute(!toggle_mute.value());
         pmem::set_ui_hide_fake_brightness(!toggle_fake_brightness.value());
+        pmem::set_ui_hide_battery_icon(!toggle_battery_icon.value());
+        pmem::set_ui_hide_numeric_battery(!toggle_battery_text.value());
         pmem::set_ui_hide_sd_card(!toggle_sd_card.value());
         send_system_refresh();
 
@@ -567,7 +576,7 @@ SetPersistentMemoryView::SetPersistentMemoryView(NavigationView& nav) {
         &button_return,
     });
 
-    text_pmem_status.set_style(&Styles::yellow);
+    text_pmem_status.set_style(Theme::getInstance()->fg_yellow);
 
     check_use_sdcard_for_pmem.set_value(pmem::should_use_sdcard_for_pmem());
     check_use_sdcard_for_pmem.on_select = [this](Checkbox&, bool v) {
@@ -729,7 +738,7 @@ AppSettingsView::AppSettingsView(
         auto path = settings_dir / entry.path();
 
         menu_view.add_item({path.filename().string().substr(0, 26),
-                            ui::Color::dark_cyan(),
+                            ui::Theme::getInstance()->fg_darkcyan->foreground,
                             &bitmap_icon_file_text,
                             [this, path](KeyEvent) {
                                 nav_.push<TextEditorView>(path);
@@ -807,6 +816,7 @@ SetMenuColorView::SetMenuColorView(NavigationView& nav) {
                   &field_green_level,
                   &field_blue_level,
                   &button_save,
+                  &button_reset,
                   &button_cancel});
 
     button_sample.set_focusable(false);
@@ -824,6 +834,13 @@ SetMenuColorView::SetMenuColorView(NavigationView& nav) {
     field_green_level.on_change = color_changed_fn;
     field_blue_level.on_change = color_changed_fn;
 
+    button_reset.on_select = [&nav, this](Button&) {
+        field_red_level.set_value(127);
+        field_green_level.set_value(127);
+        field_blue_level.set_value(127);
+        set_dirty();
+    };
+
     button_save.on_select = [&nav, this](Button&) {
         Color c = Color(field_red_level.value(), field_green_level.value(), field_blue_level.value());
         pmem::set_menu_color(c);
@@ -840,7 +857,8 @@ void SetMenuColorView::focus() {
     button_save.focus();
 }
 
-/* SetAutostartView*/
+/* SetAutoStartView ************************************/
+
 SetAutostartView::SetAutostartView(NavigationView& nav) {
     add_children({&labels,
                   &button_save,
@@ -848,7 +866,12 @@ SetAutostartView::SetAutostartView(NavigationView& nav) {
                   &options});
 
     button_save.on_select = [&nav, this](Button&) {
-        nav_setting.save();
+        autostart_app = "";
+        if (selected != 0) {
+            auto it = full_app_list.find(selected);
+            if (it != full_app_list.end())
+                autostart_app = it->second;
+        }
         nav.pop();
     };
 
@@ -879,19 +902,49 @@ SetAutostartView::SetAutostartView(NavigationView& nav) {
 
     options.set_options(opts);
     options.on_change = [this](size_t, OptionsField::value_t v) {
-        if (v == 0) {
-            autostart_app = "";
-            return;
-        }
-        auto it = full_app_list.find(v);
-        if (it != full_app_list.end()) {
-            autostart_app = it->second;
-        }
+        selected = v;
     };
     options.set_selected_index(selected);
 }
 
 void SetAutostartView::focus() {
+    options.focus();
+}
+
+/* SetThemeView ************************************/
+
+SetThemeView::SetThemeView(NavigationView& nav) {
+    add_children({&labels,
+                  &button_save,
+                  &button_cancel,
+                  &options,
+                  &checkbox_menuset});
+
+    button_save.on_select = [&nav, this](Button&) {
+        if (selected < Theme::ThemeId::MAX && (uint8_t)selected != portapack::persistent_memory::ui_theme_id()) {
+            portapack::persistent_memory::set_ui_theme_id((uint8_t)selected);
+            Theme::SetTheme((Theme::ThemeId)selected);
+            if (checkbox_menuset.value()) {
+                pmem::set_menu_color(Theme::getInstance()->bg_medium->background);
+            }
+            send_system_refresh();
+        }
+        nav.pop();
+    };
+
+    checkbox_menuset.set_value(true);
+
+    button_cancel.on_select = [&nav, this](Button&) {
+        nav.pop();
+    };
+
+    options.on_change = [this](size_t, OptionsField::value_t v) {
+        selected = v;
+    };
+    options.set_selected_index(portapack::persistent_memory::ui_theme_id());
+}
+
+void SetThemeView::focus() {
     options.focus();
 }
 
@@ -922,6 +975,7 @@ void SettingsMenuView::on_populate() {
         //{"QR Code", ui::Color::dark_cyan(), &bitmap_icon_qr_code, [this]() { nav_.push<SetQRCodeView>(); }},
         {"Brightness", ui::Color::dark_cyan(), &bitmap_icon_brightness, [this]() { nav_.push<SetFakeBrightnessView>(); }},
         {"Menu Color", ui::Color::dark_cyan(), &bitmap_icon_brightness, [this]() { nav_.push<SetMenuColorView>(); }},
+        {"Theme", ui::Color::dark_cyan(), &bitmap_icon_setup, [this]() { nav_.push<SetThemeView>(); }},
         {"Autostart", ui::Color::dark_cyan(), &bitmap_icon_setup, [this]() { nav_.push<SetAutostartView>(); }},
     });
 }

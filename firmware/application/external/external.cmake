@@ -1,9 +1,5 @@
 set(EXTCPPSRC
 
-	#pacman
-	external/pacman/main.cpp
-	external/pacman/ui_pacman.cpp
-
 	#tetris
 	external/tetris/main.cpp
 	external/tetris/ui_tetris.cpp
@@ -80,10 +76,13 @@ set(EXTCPPSRC
 	#wardrivemap
 	external/wardrivemap/main.cpp
 	external/wardrivemap/ui_wardrivemap.cpp
+
+	#tpmsrx
+	external/tpmsrx/main.cpp
+	external/tpmsrx/tpms_app.cpp
 )
 
 set(EXTAPPLIST
-	pacman
 	afsk_rx
 	calculator
 	font_viewer
@@ -102,4 +101,5 @@ set(EXTAPPLIST
 	foxhunt_rx
 	audio_test
 	wardrivemap
+	tpmsrx
 )
